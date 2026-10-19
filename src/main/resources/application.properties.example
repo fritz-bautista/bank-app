@@ -1,0 +1,6 @@
+// Insert the URL for the database here
+db.url=jdbc:mysql://localhost:3306/db_bank
+// Insert the username for the log credentials
+db.username=root
+// Leave password blank as is or depending to your log in credentials
+db.password=

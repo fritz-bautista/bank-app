@@ -1,0 +1,215 @@
+@startuml class-diagram
+title Banking Application - Class Diagram
+
+scale 800 height
+scale 800 width
+
+package "com.bank.dao" {
+    class AccountDAO {
+        + createAccount(Account account) : void
+        + findById(String accountNumber) : Optional<Account>
+        + listAccounts() : List<Account>
+        + updateBalance(String accountNumber, BigDecimal balance) : void
+        + updateBalance(Connection connection,String accountNumber, BigDecimal balance) : void
+        + checkNames(String accountName) : boolean
+    }
+
+    class TransactionDAO {
+        + save(Transaction transaction) : void
+        + save(Connection connection, Transaction transaction) : void
+        + findTransactionByAccountNum (String accountNumber) : List<Transaction>
+        + findRecentTransaction (String accountNumber, int limit) : :ist<Transaction>
+    }
+
+    class AccountDAOImpl {
+        - INSERT_QUERY : String
+        - FIND_ALL_QUERY : String
+        - SELECT_ACCOUNT : String
+        - UPDATE_ACCOUNT : String
+        - CHECK_ALL_NAMES : String
+        + createAccount(Account account) : void
+        + findById(String accountNumber) : Optional<Account>
+        + listAccounts() : List<Acount>
+        + checkNames(String accountName) : boolean
+        + updateBalance(String accountNumber, BigDecimal amount) : void
+        + updateBalance(Connection connection, String accountNumber, BigDecimal amount) : void
+        + initRows(ResultSet resultSet) : Account
+    }
+
+    class TransactionDAOImpl {
+        - SAVE_TRANSACTION : String
+        - FIND_TRANSACTION : String
+        - FIND_ALL : String
+        + save(Transaction transaction) : void
+        + save(Connection connection, Transaction transaction) : void
+        + findTransactionByAccountNum(String accountNumber) : List<Transaction>
+        + findRecentTransaction(String accountNumber, int limit) : List<Transaction>
+        + initRows(ResultSet resultSet) : Transaction
+    }
+
+    AccountDAOImpl --> AccountDAO
+    TransactionDAOImpl --> TransactionDAO
+}
+
+package "com.bank.exception" {
+    class AccountNotFoundException {
+        + AccountNotFoundException(String accountNumber)
+    }
+
+    class InvalidAccountNameDuplicate {
+        InvalidAccountNameDuplicate(String message)
+    }
+
+    class InvalidAmountBalance {
+        - BigDecimal currentBalance
+        - BigDecimal amountRequested
+        + InvalidAmountBalance(BigDecimal currentBalance, BigDecimal amountRequested)
+        + getCurrentBalance() : BigDecimal
+        + getRuestedAmount() : BigDecimal
+    }
+
+    class InvalidTransactionException {
+        + InvalidTransactionException(String message)
+    }
+
+    AccountNotFoundException --|> Exception
+    InvalidAccountNameDuplicate --|> Exception
+    InvalidAmountBalance --|> Exception
+    InvalidTransactionException --|> Exception
+}
+
+package "com.bank.models" {
+    class Account {
+        - Long id
+        - String accountNumber
+        - String accountName
+        - BigDecimal balance
+        - LocalDateTime createdAt
+    }
+
+    class Transaction {
+        - Long id
+        - String transactionReference
+        - String accountNumber
+        - TransactionType transactionType
+        - BigDecimal amount
+        - BigDecimal balanceAfter
+        - String referenceAccount
+        - LocalDateTime createdAt
+    }
+
+    enum TransactionType {
+        DEPOSIT
+        WITHDRAW
+        TRANSACTION_OUT
+        TRANSACTION_IN
+        + displaceName() : String
+    }
+
+    Transaction --> TransactionType
+}
+
+package "com.bank.services" {
+    class AccountService {
+        - AccountDAO accountDao
+        - Scanner input
+        - CREATE_ACCOUNT : String
+        - BALANCE_INQUIRY : String
+        - LIST_ALL : String
+        - ACCOUNT_PROMPT : String
+        + AccountService(AccountDAO accountDao, Scanner input)
+        + createAccount() : void
+        + checkIfNameHasDuplicate() : void
+        + listAllAccount() : void
+        + balanceInquiry() : void
+        + findOrThrow(String accountNumber) : Account
+        + generateAccountNumber() : String
+        + printAccountById(Account account) : void
+        + printAccounts(List<Account> accounts) : void
+    }
+
+    class TransactionService {
+        - ReferenceGenerator referenceGenerator
+        - AccountDAO accountDAO
+        - TransactionDAO transactionDAO
+        - AccountService accountService
+        - Scanner input
+        + TransactionService(ReferenceGenerator , AccountDAO , TransactionDAO , AccountService , Scanner )
+        + deposit() : void
+        + withdraw() : void
+        + transfer() : void
+        + transactionHistory() : void
+        + validateAmountBalance(Account account, BigDecimal amount) : void
+        + printReceipt(Transaction transaction) : void
+        + printTransactionHistory(List<Transaction> transactions) : void
+        - requestAccountNumber() : Account
+        - requestAccountNumber(String prompt) : Account
+        + requestPositiveAmount(String message) : public
+    }
+
+    AccountService --> AccountDAO
+    TransactionService --> TransactionDAO
+    TransactionService --> AccountDAO
+    TransactionService --> AccountService
+}
+
+package "com.bank.util" {
+    Class ReferenceGenerator {
+        - PREFIX : String
+        - DATE_FORMATTER : DateTimeFormatter
+        - SEQUENCE : AtomicLong
+        + generateReference() : String
+    }
+}
+
+package "com.bank.config" {
+    class DbConnection {
+        - PROP_URL : String
+        - PROP_USERNAME : String
+        - PROP_PASSWORD : String
+        - DbConnection
+        + getConnection() : DbConnection
+    }
+
+    class PropertyLoader {
+        - PROPERTIES_FILE : String
+        - Properties properties
+        + PropertyLoader PropertyLoader
+        + getInstance() : PropertyLoader
+        - loadProperties() : void
+        + getProperty(String key) : String
+        + getProperty(String key, String defaultValue) : String
+    }
+
+    DbConnection --> PropertyLoader
+}
+
+package "com.bank.menu" {
+    class BankMenu {
+        + BankMenu()
+        + start()
+        + typeOfTransaction()
+        + printMenu()
+    }
+
+    BankMenu --> AccountDAO
+    BankMenu --> TransactionDAO
+}
+
+package "com.bank.app" {
+    class Main {
+        + {static} main(String[]) : void
+    }
+    Main --> BankMenu
+}
+
+AccountDAOImpl --> DbConnection
+TransactionDAOImpl --> DbConnection
+TransactionService --> ReferenceGenerator
+AccountService .left.> AccountNotFoundException
+AccountService .left.> InvalidAccountNameDuplicate
+AccountService .left.> InvalidAmountBalance
+TransactionService .left.> InvalidTransactionException
+TransactionService .left.> InvalidAmountBalance
+
+@enduml
